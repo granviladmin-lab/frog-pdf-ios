@@ -172,6 +172,12 @@ final class SignaturePadView: UIView {
     }
 }
 
+/// Hands screen-edge gestures (Control Center, home indicator) to the app first, so a
+/// stroke that runs to the edge of the pad isn't taken over by the system.
+final class DrawingNavigationController: UINavigationController {
+    override var preferredScreenEdgesDeferringSystemGestures: UIRectEdge { return .all }
+}
+
 final class SignatureViewController: UIViewController {
     var onChoose: ((Signature) -> Void)?
     private let pad = SignaturePadView()
@@ -181,9 +187,6 @@ final class SignatureViewController: UIViewController {
     override func viewDidLoad() {
         super.viewDidLoad()
         title = "Signature"
-        // keep the sheet from sliding away while signing (iOS 13+ swipe to dismiss)
-        if #available(iOS 13.0, *) { isModalInPresentation = true }
-        preferredContentSize = CGSize(width: 620, height: 440)
         view.backgroundColor = Compat.background
         navigationItem.leftBarButtonItem = UIBarButtonItem(barButtonSystemItem: .cancel, target: self, action: #selector(cancel))
         navigationItem.rightBarButtonItems = [
@@ -202,6 +205,9 @@ final class SignatureViewController: UIViewController {
         savedScroll.addSubview(savedStack)
         savedStack.translatesAutoresizingMaskIntoConstraints = false
 
+        // full screen now, so cap the pad at a signing-box height instead of filling a tall iPad
+        let padHeight = pad.heightAnchor.constraint(equalToConstant: 360)
+        padHeight.priority = .defaultHigh
         let stack = UIStackView(arrangedSubviews: [savedLabel, savedScroll, pad])
         stack.axis = .vertical
         stack.spacing = 12
@@ -211,8 +217,10 @@ final class SignatureViewController: UIViewController {
             stack.leadingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.leadingAnchor, constant: 16),
             stack.trailingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.trailingAnchor, constant: -16),
             stack.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor, constant: 12),
-            stack.bottomAnchor.constraint(equalTo: view.safeAreaLayoutGuide.bottomAnchor, constant: -16),
+            stack.bottomAnchor.constraint(lessThanOrEqualTo: view.safeAreaLayoutGuide.bottomAnchor, constant: -16),
             savedScroll.heightAnchor.constraint(equalToConstant: 64),
+            pad.heightAnchor.constraint(greaterThanOrEqualToConstant: 160),
+            padHeight,
             savedStack.leadingAnchor.constraint(equalTo: savedScroll.contentLayoutGuide.leadingAnchor),
             savedStack.trailingAnchor.constraint(equalTo: savedScroll.contentLayoutGuide.trailingAnchor),
             savedStack.topAnchor.constraint(equalTo: savedScroll.contentLayoutGuide.topAnchor),

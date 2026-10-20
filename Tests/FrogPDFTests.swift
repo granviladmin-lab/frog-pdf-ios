@@ -209,6 +209,26 @@ final class FrogPDFTests: XCTestCase {
         spin(0.5)
         save(window, to: "\(dir)/editor-pen.png")
 
+        // The signature pad must not sit under a pan gesture (a sheet's swipe-to-dismiss
+        // cancels downward strokes), so it is presented full screen.
+        editor.chooseSignature()
+        spin(1.5)
+        let sigNav = try XCTUnwrap(nav.presentedViewController as? DrawingNavigationController)
+        XCTAssertEqual(sigNav.modalPresentationStyle, .fullScreen)
+        let pad = try XCTUnwrap(Self.find(SignaturePadView.self, in: sigNav.view))
+        var ancestor = pad.superview
+        while let v = ancestor {
+            // the navigation controller's own back-swipe pans can't begin on its root screen
+            for g in (v === sigNav.view ? [] : v.gestureRecognizers ?? []) where g.isEnabled && g is UIPanGestureRecognizer && !(g is UIScreenEdgePanGestureRecognizer) {
+                XCTFail("pan gesture \(g) on \(type(of: v)) can steal signature strokes")
+            }
+            ancestor = v.superview
+        }
+        XCTAssertLessThanOrEqual(pad.bounds.height, 361)
+        save(window, to: "\(dir)/signature-presented.png")
+        sigNav.dismiss(animated: false)
+        spin(0.5)
+
         let lockWindow = makeWindow()
         lockWindow.rootViewController = LockViewController()
         lockWindow.makeKeyAndVisible()
@@ -234,6 +254,12 @@ final class FrogPDFTests: XCTestCase {
         // annotations were saved to the file through UIDocument
         let saved = PDFDocument(url: url)!
         XCTAssertGreaterThanOrEqual(saved.page(at: 0)!.annotations.count, 4)
+    }
+
+    static func find<T: UIView>(_ type: T.Type, in view: UIView) -> T? {
+        if let v = view as? T { return v }
+        for sub in view.subviews { if let v = find(type, in: sub) { return v } }
+        return nil
     }
 
     private func makeWindow() -> UIWindow {

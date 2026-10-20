@@ -596,14 +596,14 @@ final class EditorViewController: UIViewController, UIGestureRecognizerDelegate,
         toast("Signed. Drag to move, A− / A+ to resize.")
     }
 
-    private func chooseSignature() {
+    func chooseSignature() {
         let vc = SignatureViewController()
         vc.onChoose = { [weak self] s in
             self?.signature = s
             self?.setTool(.sign)
             self?.toast("Tap where the signature goes")
         }
-        presentSheet(vc, from: nil)
+        presentFullScreen(vc)
     }
 
     private func chooseImage() {
@@ -632,6 +632,14 @@ final class EditorViewController: UIViewController, UIGestureRecognizerDelegate,
     private func presentSheet(_ vc: UIViewController, from rect: CGRect?) {
         let nav = UINavigationController(rootViewController: vc)
         nav.modalPresentationStyle = .formSheet
+        present(nav, animated: true)
+    }
+
+    /// Full screen, not a sheet: on iOS 13+ a sheet's swipe-to-dismiss pan claims downward
+    /// strokes and cancels them, even with isModalInPresentation set.
+    private func presentFullScreen(_ vc: UIViewController) {
+        let nav = DrawingNavigationController(rootViewController: vc)
+        nav.modalPresentationStyle = .fullScreen
         present(nav, animated: true)
     }
 
