@@ -1,0 +1,47 @@
+name: FrogPDF
+options:
+  bundleIdPrefix: com.granviladmin
+  deploymentTarget:
+    iOS: "12.0"
+settings:
+  base:
+    SWIFT_VERSION: "5.0"
+    MARKETING_VERSION: "1.0"
+    CURRENT_PROJECT_VERSION: "1"
+    ENABLE_BITCODE: NO
+targets:
+  FrogPDF:
+    type: application
+    platform: iOS
+    sources:
+      - Sources
+      - path: Resources
+        excludes:
+          - Info.plist
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.granviladmin.frogpdf
+        PRODUCT_NAME: FrogPDF
+        TARGETED_DEVICE_FAMILY: "1,2"
+        INFOPLIST_FILE: Resources/Info.plist
+        ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
+  FrogPDFTests:
+    type: bundle.unit-test
+    platform: iOS
+    sources:
+      - Tests
+    dependencies:
+      - target: FrogPDF
+    settings:
+      base:
+        GENERATE_INFOPLIST_FILE: YES
+        PRODUCT_BUNDLE_IDENTIFIER: com.granviladmin.frogpdf.tests
+schemes:
+  FrogPDF:
+    build:
+      targets:
+        FrogPDF: all
+        FrogPDFTests: [test]
+    test:
+      targets:
+        - FrogPDFTests
